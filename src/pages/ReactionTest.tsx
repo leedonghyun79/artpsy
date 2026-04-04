@@ -14,39 +14,34 @@ export default function ReactionTest() {
 
   const timerRef = useRef<number | null>(null);
 
-
   useEffect(() => {
+    document.title = '순발력 테스트';
     const today = new Date().toDateString();
     const countKey = `reaction_play_count_${today}`;
     setPlayCount(parseInt(localStorage.getItem(countKey) || '0'));
   }, []);
 
   const startTest = async () => {
-    // 3회 이상 플레이 시 전면 광고 로직
     const today = new Date().toDateString();
     const countKey = `reaction_play_count_${today}`;
     const currentCount = parseInt(localStorage.getItem(countKey) || '0');
 
     if (currentCount >= 3) {
-      console.log('ReactionTest: 3회 이상 플레이 감지. 광고를 송출합니다.');
       try {
         await showInterstitial();
-        // 광고를 봤으므로 카운트 초기화
         localStorage.setItem(countKey, '0');
         setPlayCount(0);
       } catch (e) {
         console.error('Ad failed:', e);
       }
     } else {
-      // 3회 미만일 때만 카운트 증가
       const newCount = currentCount + 1;
       localStorage.setItem(countKey, newCount.toString());
       setPlayCount(newCount);
     }
 
     setState('waiting');
-    const randomTime = Math.floor(Math.random() * 3000) + 2000; // 2~5초 랜덤
-
+    const randomTime = Math.floor(Math.random() * 3000) + 2000;
     timerRef.current = window.setTimeout(() => {
       setState('ready');
       setStartTime(performance.now());
@@ -57,16 +52,13 @@ export default function ReactionTest() {
     if (state === 'idle') {
       startTest();
     } else if (state === 'waiting') {
-      // 너무 빨리 누름
       if (timerRef.current) clearTimeout(timerRef.current);
       setState('too-soon');
     } else if (state === 'ready') {
-      // 성공
       const endTime = performance.now();
       setResult(Math.round(endTime - startTime));
       setState('finished');
     } else if (state === 'too-soon' || state === 'finished') {
-      // 다시 시작
       setState('waiting');
       const randomTime = Math.floor(Math.random() * 3000) + 2000;
       timerRef.current = window.setTimeout(() => {
@@ -86,11 +78,11 @@ export default function ReactionTest() {
 
   const getBackgroundColor = () => {
     switch (state) {
-      case 'idle': return 'bg-[#3182F6]'; // Toss Blue
-      case 'waiting': return 'bg-[#FF3B30]'; // Red
-      case 'ready': return 'bg-[#34C759]'; // Green
-      case 'too-soon': return 'bg-[#FF9500]'; // Orange
-      case 'finished': return 'bg-[#3182F6]'; // Blue
+      case 'idle': return 'bg-[#3182F6]';
+      case 'waiting': return 'bg-[#FF3B30]';
+      case 'ready': return 'bg-[#34C759]';
+      case 'too-soon': return 'bg-[#FF9500]';
+      case 'finished': return 'bg-[#3182F6]';
       default: return 'bg-[#3182F6]';
     }
   };
@@ -100,24 +92,8 @@ export default function ReactionTest() {
       onClick={handleClick}
       className={`min-h-screen ${getBackgroundColor()} transition-colors duration-200 cursor-pointer select-none touch-manipulation flex flex-col`}
     >
-      {/* Header */}
-      <header className="px-5 py-4 flex items-center gap-1 fixed top-0 w-full z-10">
-        <button
-          onClick={(e) => { e.stopPropagation(); navigate('/'); }}
-          className="p-2 -ml-2 text-white/80 hover:text-white transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-xl">⚡</span>
-          <span className="text-[18px] font-bold text-white tracking-tight">순발력 테스트</span>
-        </div>
-      </header>
-
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-white animate-enter">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-white animate-enter pt-10">
         {state === 'idle' && (
           <>
             <div className="text-6xl mb-6 animate-pop">⚡</div>
@@ -162,7 +138,7 @@ export default function ReactionTest() {
                 다시 도전
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); navigate('/'); }}
+                onClick={(e) => { e.stopPropagation(); navigate(-1); }}
                 className="flex-1 h-[56px] rounded-[18px] bg-black/20 text-white font-bold text-lg active:scale-95 transition-transform"
               >
                 홈으로
@@ -189,7 +165,7 @@ export default function ReactionTest() {
                 다시 도전
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); navigate('/'); }}
+                onClick={(e) => { e.stopPropagation(); navigate(-1); }}
                 className="flex-1 h-[56px] rounded-[18px] bg-black/20 text-white font-bold text-lg active:scale-95 transition-transform"
               >
                 홈으로

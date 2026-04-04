@@ -1,4 +1,4 @@
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 
@@ -10,6 +10,8 @@ import ReactionTest from './pages/ReactionTest';
 import MemoryTest from './pages/MemoryTest';
 import ColorTest from './pages/ColorTest';
 import TimingTest from './pages/TimingTest';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 /**
  * 앱 라우팅 컴포넌트
@@ -22,6 +24,8 @@ function AppRoutes() {
   if (!isOnboardingComplete) {
     return (
       <Routes>
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="*" element={<Onboarding />} />
       </Routes>
     );
@@ -43,19 +47,16 @@ function AppRoutes() {
 
 /**
  * 메인 앱 컴포넌트
- * - MemoryRouter를 사용하여 SPA 라우팅 구현
- * - URL 해시를 파싱하여 딥링크 지원
+ * - HashRouter를 사용하여 SPA 라우팅 구현
+ * - 브라우저 히스토리와 연동되어 뒤로가기 시 이전 페이지 이동 가능
  */
 export default function App() {
-  // URL 경로 파싱 (딥링크 지원)
-  const path = window.location.hash.replace('#', '') || '/';
-
   return (
     <AppProvider>
       <AuthProvider>
-        <MemoryRouter initialEntries={[path]}>
+        <HashRouter>
           <AppRoutes />
-        </MemoryRouter>
+        </HashRouter>
       </AuthProvider>
     </AppProvider>
   );

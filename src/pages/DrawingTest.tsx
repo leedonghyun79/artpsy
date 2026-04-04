@@ -28,18 +28,22 @@ export default function DrawingTest() {
   const [result, setResult] = useState<PsychologyResult | null>(null);
   const [hasUsedFreeTest, setHasUsedFreeTest] = useState(false);
   const [drawingImage, setDrawingImage] = useState<string>("");
+  const [showWarningModal, setShowWarningModal] = useState(false);
   const [currentColor, setCurrentColor] = useState<string>('#333D4B');
   const [isEraser, setIsEraser] = useState<boolean>(false);
   const [showPicker, setShowPicker] = useState<boolean>(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [isTouching, setIsTouching] = useState(false);
 
-  const { showInterstitial } = useAdMob();
+  const { showInterstitial, isLoading: isAdLoading, status: adStatus } = useAdMob();
 
   // Refs for drawing logic to access current state without re-binding events
   const colorRef = useRef('#333D4B');
   const isEraserRef = useRef(false);
   const showPickerRef = useRef(false);
+  const strokeLengthRef = useRef(0);
+  // Bounding box for the drawing to ensure it's not a tiny squiggle
+  const bboxRef = useRef({ minX: 10000, minY: 10000, maxX: 0, maxY: 0 });
 
   // Check free trial
   useEffect(() => {
@@ -49,6 +53,11 @@ export default function DrawingTest() {
       setHasUsedFreeTest(true);
     }
   }, []);
+
+  useEffect(() => {
+    // Stage가 변경될 때마다 타이틀 설정
+    document.title = stage === 'result' ? '분석 결과' : '그림심리테스트';
+  }, [stage]);
 
   useEffect(() => {
     if (stage === 'ad' && drawingImage) {
@@ -159,6 +168,18 @@ export default function DrawingTest() {
         ctx.lineTo(x, y);
         ctx.stroke();
 
+        // Only track drawing volume for pens (not eraser)
+        if (!isEraserRef.current) {
+          const dist = Math.sqrt(Math.pow(x - lastX, 2) + Math.pow(y - lastY, 2));
+          strokeLengthRef.current += dist;
+
+          // Update bounding box
+          bboxRef.current.minX = Math.min(bboxRef.current.minX, x);
+          bboxRef.current.minY = Math.min(bboxRef.current.minY, y);
+          bboxRef.current.maxX = Math.max(bboxRef.current.maxX, x);
+          bboxRef.current.maxY = Math.max(bboxRef.current.maxY, y);
+        }
+
         lastX = x;
         lastY = y;
       };
@@ -194,11 +215,13 @@ export default function DrawingTest() {
     setSelectedTopic(topic);
     setStage('drawing');
 
-    // Reset tools
+    // Reset tools and drawing volume
     setCurrentColor('#333D4B');
     setIsEraser(false);
     colorRef.current = '#333D4B';
     isEraserRef.current = false;
+    strokeLengthRef.current = 0;
+    bboxRef.current = { minX: 10000, minY: 10000, maxX: 0, maxY: 0 };
   };
 
   const handleColorChange = (color: any) => {
@@ -225,6 +248,16 @@ export default function DrawingTest() {
   };
 
   const handleFinishDrawing = () => {
+    // 획의 총 길이가 너무 짧거나 그림의 크기가 너무 작으면 경고 
+    const { minX, minY, maxX, maxY } = bboxRef.current;
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    if (strokeLengthRef.current < 800 || width < 120 || height < 120) {
+      setShowWarningModal(true);
+      return;
+    }
+
     if (canvasRef.current) {
       const image = canvasRef.current.toDataURL('image/png');
       setDrawingImage(image);
@@ -325,41 +358,19 @@ ${result.advice}
   };
 
   const topicData = [
-    { id: 'person' as Topic, title: '사람', emoji: '👤', desc: '자아상, 대인관계를 파악해요' },
-    { id: 'house' as Topic, title: '집', emoji: '🏠', desc: '가정환경, 안정감을 분석해요' },
-    { id: 'tree' as Topic, title: '나무', emoji: '🌳', desc: '성장, 생명력을 알아봐요' },
-    { id: 'fish' as Topic, title: '물고기', emoji: '🐟', desc: '무의식, 감정을 읽어봐요' }
+    { id: 'person' as Topic, title: '사람', emoji: '👤', desc: '자아상과 타인에 대한 시선을 파악해요', labels: { rel: '대인관계', work: '사회적 에너지' } },
+    { id: 'house' as Topic, title: '집', emoji: '🏠', desc: '가족 관계와 내면의 안정감을 분석해요', labels: { rel: '가족 내 상호작용', work: '내적 적응' } },
+    { id: 'tree' as Topic, title: '나무', emoji: '🌳', desc: '무의식적 자아와 내면의 에너지를 알아봐요', labels: { rel: '정서적 상호관계', work: '추동력 및 의지' } },
+    { id: 'fish' as Topic, title: '물고기', emoji: '🐟', desc: '무의식 속 감정과 현재의 스트레스를 읽어요', labels: { rel: '감정적 교류', work: '상황 적응' } }
   ];
+
+  useEffect(() => {
+    document.title = stage === 'result' ? '분석 결과' : '그림심리테스트';
+  }, [stage]);
 
   return (
     <div className="min-h-screen bg-[#FFF9F2] pb-10">
-      {/* Header */}
-      <header className="header-blur px-5 py-4 flex items-center gap-1">
-        <button onClick={() => {
-          if (stage === 'drawing') {
-            setStage('topic');
-            setSelectedTopic(null);
-          } else {
-            navigate('/');
-          }
-        }} className="-ml-2 p-2 text-[#4E5968] touch-effect">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div className="flex items-center gap-2">
-          <img
-            src="https://static.toss.im/appsintoss/13599/d755fb6b-f63b-4408-9605-5f94e3c6f74b.png"
-            alt="Logo"
-            className="w-6 h-6 object-contain"
-          />
-          <span className="text-[18px] font-bold text-[#191F28] tracking-tight">
-            {stage === 'result' ? '분석 결과' : '그림심리테스트'}
-          </span>
-        </div>
-      </header>
-
-      <main className="px-5 pt-6 animate-enter">
+      <main className="px-5 pt-10 animate-enter">
         {/* Topic Selection */}
         {stage === 'topic' && (
           <>
@@ -530,7 +541,11 @@ ${result.advice}
                 광고보고 결과 확인하기
               </button>
               <button
-                onClick={() => setStage('drawing')}
+                onClick={() => {
+                  setStage('drawing');
+                  strokeLengthRef.current = 0;
+                  bboxRef.current = { minX: 10000, minY: 10000, maxX: 0, maxY: 0 };
+                }}
                 className="w-full btn-toss bg-[#E5E8EB] text-[#4E5968] hover:bg-[#D1D6DB] order-2"
               >
                 다시 그리기
@@ -542,28 +557,50 @@ ${result.advice}
         {/* Loading / Ad Simulation */}
         {
           stage === 'ad' && (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-center animate-enter">
-              <div className="relative mb-8">
-                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center animate-pulse">
-                  <span className="text-4xl">✨</span>
+            <div className="flex flex-col items-center justify-center min-h-[70vh] text-center animate-enter px-6">
+              <div className="relative mb-10">
+                <div className="w-24 h-24 bg-white rounded-[32px] shadow-[0_20px_50px_rgba(49,130,246,0.1)] flex items-center justify-center relative z-10 border border-[#F2F4F6]">
+                  <span className="text-5xl animate-bounce-slow">🧐</span>
                 </div>
-                <div className="absolute inset-0 border-4 border-[#3182F6] border-t-transparent rounded-full animate-spin"></div>
               </div>
 
-              <h2 className="text-[20px] font-bold text-[#191F28] mb-3 transition-all duration-300">
-                {LOADING_MESSAGES[loadingMsgIndex]}
-              </h2>
-              <p className="text-[#8B95A1] mb-10 text-sm font-medium">잠시만 기다려주세요</p>
+              <div className="space-y-4 max-w-xs">
+                <h3 className="text-[22px] font-bold text-[#191F28] leading-tight">
+                  그림을 정밀하게<br />분석하고 있어요
+                </h3>
+                <p className="text-[#8B95A1] font-medium transition-all duration-500 min-h-[24px]">
+                  {LOADING_MESSAGES[loadingMsgIndex]}
+                </p>
+              </div>
 
-              <div className="w-64 h-2 bg-[#E5E8EB] rounded-full overflow-hidden">
+              {/* Progress Bar Container */}
+              <div className="w-full max-w-[200px] h-1.5 bg-[#E5E8EB] rounded-full mt-10 overflow-hidden">
                 <div
-                  className="h-full bg-[#3182F6] transition-all duration-100 ease-out"
+                  className="h-full bg-[#3182F6] transition-all duration-300 ease-out"
                   style={{ width: `${adProgress}%` }}
-                />
+                ></div>
               </div>
             </div>
           )
         }
+
+
+        {/* Full-screen Ad Loading Overlay */}
+        {isAdLoading && (
+          <div className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-6 animate-enter">
+            <div className="bg-white rounded-[32px] p-8 w-full max-w-[280px] text-center shadow-2xl">
+              <div className="w-16 h-16 bg-[#F2F4F6] rounded-full flex items-center justify-center mx-auto mb-5">
+                <div className="w-8 h-8 border-4 border-[#3182F6] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <h4 className="text-[18px] font-bold text-[#191F28] mb-2">광고 준비 중</h4>
+              <p className="text-[#8B95A1] text-[14px] font-medium leading-relaxed">
+                잠시만 기다려 주세요.<br />
+                {adStatus === 'Ready' ? '광고를 불러오고 있습니다.' : adStatus}
+              </p>
+            </div>
+          </div>
+        )}
+
 
         {/* Result Report */}
         {
@@ -597,46 +634,53 @@ ${result.advice}
                 <div className="surface p-7 !rounded-[32px] !shadow-[0_8px_30px_rgba(210,195,180,0.15)] bg-white/80 backdrop-blur-sm border border-white/60">
                   <h3 className="text-[19px] font-bold text-[#423C38] mb-4 flex items-center gap-2.5">
                     <span className="w-8 h-8 rounded-full bg-[#FFF0E6] flex items-center justify-center text-lg">🔍</span>
-                    상세 분석
+                    상세 심층 분석
                   </h3>
                   <p className="text-[#5C5550] leading-[1.7] whitespace-pre-line text-[16px] tracking-wide">
                     {result.description}
                   </p>
                 </div>
 
-                {/* Relationship */}
-                <div className="surface p-7 !rounded-[32px] !shadow-[0_8px_30px_rgba(210,195,180,0.15)] bg-white/80 backdrop-blur-sm border border-white/60">
-                  <h3 className="text-[19px] font-bold text-[#423C38] mb-4 flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-full bg-[#FFE8E8] flex items-center justify-center text-lg">❤️</span>
-                    대인관계 & 연애
-                  </h3>
-                  <p className="text-[#5C5550] leading-[1.7] whitespace-pre-line text-[16px] tracking-wide">
-                    {result.relationships}
-                  </p>
-                </div>
+                {/* Relationships */}
+                {result.relationships && (
+                  <div className="surface p-7 !rounded-[32px] !shadow-[0_8px_30px_rgba(210,195,180,0.15)] bg-white/80 backdrop-blur-sm border border-white/60">
+                    <h3 className="text-[19px] font-bold text-[#423C38] mb-4 flex items-center gap-2.5">
+                      <span className="w-8 h-8 rounded-full bg-[#F0F5FF] flex items-center justify-center text-lg">🤝</span>
+                      {topicData.find(t => t.id === selectedTopic)?.labels.rel || '대인관계'} 성향
+                    </h3>
+                    <p className="text-[#5C5550] leading-[1.7] whitespace-pre-line text-[16px] tracking-wide">
+                      {result.relationships}
+                    </p>
+                  </div>
+                )}
 
                 {/* Work Style */}
-                <div className="surface p-7 !rounded-[32px] !shadow-[0_8px_30px_rgba(210,195,180,0.15)] bg-white/80 backdrop-blur-sm border border-white/60">
-                  <h3 className="text-[19px] font-bold text-[#423C38] mb-4 flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-full bg-[#E8F3FF] flex items-center justify-center text-lg">💼</span>
-                    업무 스타일
-                  </h3>
-                  <p className="text-[#5C5550] leading-[1.7] whitespace-pre-line text-[16px] tracking-wide">
-                    {result.workStyle}
-                  </p>
-                </div>
+                {result.workStyle && (
+                  <div className="surface p-7 !rounded-[32px] !shadow-[0_8px_30px_rgba(210,195,180,0.15)] bg-white/80 backdrop-blur-sm border border-white/60">
+                    <h3 className="text-[19px] font-bold text-[#423C38] mb-4 flex items-center gap-2.5">
+                      <span className="w-8 h-8 rounded-full bg-[#E6F9F0] flex items-center justify-center text-lg">💼</span>
+                      {topicData.find(t => t.id === selectedTopic)?.labels.work || '일/수행'} 스타일
+                    </h3>
+                    <p className="text-[#5C5550] leading-[1.7] whitespace-pre-line text-[16px] tracking-wide">
+                      {result.workStyle}
+                    </p>
+                  </div>
+                )}
 
                 {/* Advice */}
-                <div className="surface p-7 !rounded-[32px] bg-[#F0FDF4] border border-[#DCFCE7] !shadow-none ring-4 ring-[#F0FDF4]/50">
-                  <h3 className="text-[19px] font-bold text-[#15803D] mb-4 flex items-center gap-2.5">
-                    <span className="text-xl">🍀</span>
-                    행운의 조언
-                  </h3>
-                  <p className="text-[#14532D] font-medium leading-[1.7] whitespace-pre-line text-[16px]">
-                    {result.advice}
-                  </p>
-                </div>
+                {result.advice && (
+                  <div className="surface p-7 !rounded-[32px] !shadow-[0_8px_30px_rgba(210,195,180,0.15)] bg-[#FFF8F0] border border-[#FFE8CC]">
+                    <h3 className="text-[19px] font-bold text-[#7A5C2D] mb-4 flex items-center gap-2.5">
+                      <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-lg shadow-sm">💡</span>
+                      행운의 조언
+                    </h3>
+                    <p className="text-[#6B5A4E] leading-[1.7] whitespace-pre-line text-[16px] font-medium tracking-wide">
+                      {result.advice}
+                    </p>
+                  </div>
+                )}
               </div>
+
 
               <div className="flex gap-3 mt-10 px-5">
                 <button
@@ -646,15 +690,34 @@ ${result.advice}
                   공유하기
                 </button>
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate(-1)}
                   className="flex-1 btn-toss bg-[#EBE5DE] text-[#6E655F] hover:bg-[#DDD6CE] !rounded-[24px] !h-[60px] text-[18px]"
                 >
-                  처음으로
+                  홈으로
                 </button>
               </div>
             </div>
           )
-        }      </main >
+        }
+
+        {/* Custom Warning Modal */}
+        {showWarningModal && (
+          <div className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-6 animate-enter">
+            <div className="bg-white rounded-[32px] p-8 w-full max-w-[320px] text-center shadow-2xl animate-pop">
+              <div className="text-5xl mb-6">🎨</div>
+              <h4 className="text-[22px] font-bold text-[#191F28] mb-8 leading-tight">
+                조금만 더<br />정성껏 그려볼까요?
+              </h4>
+              <button
+                onClick={() => setShowWarningModal(false)}
+                className="w-full h-[56px] bg-[#3182F6] text-white rounded-[18px] font-bold text-[17px] active:scale-95 transition-transform"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        )}
+      </main >
     </div >
   );
 }

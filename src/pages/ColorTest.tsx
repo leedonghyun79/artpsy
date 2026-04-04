@@ -16,13 +16,12 @@ export default function ColorTest() {
   const [showPenalty, setShowPenalty] = useState(false);
 
   useEffect(() => {
+    document.title = '색감 테스트';
     const today = new Date().toDateString();
     const countKey = `color_play_count_${today}`;
     setPlayCount(parseInt(localStorage.getItem(countKey) || '0'));
   }, []);
 
-  // Difficulty adjustment factor (lower = harder)
-  // Differene decreases as level increases
   const getDiff = (lvl: number) => Math.max(10, 80 - Math.floor(lvl * 1.5));
 
   useEffect(() => {
@@ -42,7 +41,6 @@ export default function ColorTest() {
   }, [isPlaying, timeLeft]);
 
   const startGame = async () => {
-    // 3회 이상 플레이 시 전면 광고 로직
     const today = new Date().toDateString();
     const countKey = `color_play_count_${today}`;
     const currentCount = parseInt(localStorage.getItem(countKey) || '0');
@@ -50,14 +48,12 @@ export default function ColorTest() {
     if (currentCount >= 3) {
       try {
         await showInterstitial();
-        // 광고를 봤으므로 카운트 초기화
         localStorage.setItem(countKey, '0');
         setPlayCount(0);
       } catch (e) {
         console.error('Ad failed:', e);
       }
     } else {
-      // 3회 미만일 때만 카운트 증가
       const newCount = currentCount + 1;
       localStorage.setItem(countKey, newCount.toString());
       setPlayCount(newCount);
@@ -72,18 +68,12 @@ export default function ColorTest() {
   };
 
   const generateLevel = (lvl: number) => {
-    // Determine grid size based on level
-    // 2x2 -> 3x3 -> 4x4 -> ... max around 8x8
     const size = Math.min(8, Math.floor((lvl + 1) / 2) + 2);
     setGridSize(size);
-
-    // Random base color
     const r = Math.floor(Math.random() * 200) + 25;
     const g = Math.floor(Math.random() * 200) + 25;
     const b = Math.floor(Math.random() * 200) + 25;
     setBaseColor({ r, g, b });
-
-    // Random answer position
     setAnswerIdx(Math.floor(Math.random() * (size * size)));
   };
 
@@ -91,38 +81,28 @@ export default function ColorTest() {
     if (!isPlaying) return;
 
     if (index === answerIdx) {
-      // Correct
       const nextLevel = level + 1;
       setLevel(nextLevel);
       setScore(prev => prev + 100 * Math.floor(nextLevel / 2));
-      setTimeLeft(prev => Math.min(15, prev + 1.5)); // Bonus time
+      setTimeLeft(prev => Math.min(15, prev + 1.5));
       generateLevel(nextLevel);
     } else {
-      // Visual Penalty Effect
       setShowPenalty(true);
       setTimeout(() => setShowPenalty(false), 500);
-
       const newTime = Math.max(0, timeLeft - 3.0);
       setTimeLeft(newTime);
       if (newTime <= 0) {
         setIsPlaying(false);
       }
-      // Visual Feedback could be added here (shake effect)
     }
   };
 
   const getTileStyle = (index: number) => {
     const isAnswer = index === answerIdx;
     const diff = getDiff(level);
-
-    // Modify color for answer
-    // To make it brighter, add diff. To make darker, subtract.
-    // Randomly decide brighter or darker to prevent pattern guessing? 
-    // Usually simpler just to add diff.
     const r = isAnswer ? Math.min(255, baseColor.r + diff) : baseColor.r;
     const g = isAnswer ? Math.min(255, baseColor.g + diff) : baseColor.g;
     const b = isAnswer ? Math.min(255, baseColor.b + diff) : baseColor.b;
-
     return {
       backgroundColor: `rgb(${r}, ${g}, ${b})`,
     };
@@ -130,32 +110,21 @@ export default function ColorTest() {
 
   return (
     <div className="min-h-screen bg-[#F2F4F6] flex flex-col">
-      {/* Header */}
-      <header className="px-5 py-4 flex items-center justify-between bg-white sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => navigate('/')}
-            className="p-2 -ml-2 text-[#4E5968] active:scale-95 transition-transform"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">👀</span>
-            <span className="text-[18px] font-bold text-[#191F28] tracking-tight">색감 테스트</span>
+      {/* UI Hud for Active Game */}
+      {isPlaying && (
+        <div className="fixed top-4 left-0 right-0 px-6 flex justify-between items-center z-20 pointer-events-none">
+          <div className="px-4 py-2 bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-[#E5E8EB] font-bold text-[#191F28]">
+            Lv. {level}
+          </div>
+          <div className="px-4 py-2 bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-[#E5E8EB] font-bold text-[#3182F6]">
+            {score.toLocaleString()}점
           </div>
         </div>
-        <div className="flex gap-4 text-lg font-bold">
-          <span className="text-[#191F28]">Lv. {level}</span>
-          <span className="text-[#3182F6]">{score}점</span>
-        </div>
-      </header>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 animate-enter w-full mx-auto">
+      <main className="flex-1 flex flex-col items-center justify-center p-6 animate-enter w-full mx-auto pt-10">
         {!isPlaying && timeLeft === 15 ? (
-          // Start Screen
           <div className="text-center">
             <div className="text-7xl mb-6 animate-pop">👀</div>
             <h1 className="text-2xl font-bold text-[#191F28] mb-3">색감 테스트</h1>
@@ -168,9 +137,7 @@ export default function ColorTest() {
             </button>
           </div>
         ) : !isPlaying && timeLeft === 0 ? (
-          // Game Over Screen
           (() => {
-            // 등급 계산
             let grade = '';
             let gradeColor = '';
             let gradeEmoji = '';
@@ -211,8 +178,6 @@ export default function ColorTest() {
             return (
               <div className="text-center w-full max-w-sm animate-pop">
                 <div className="text-7xl mb-6">{gradeEmoji}</div>
-
-                {/* 등급 표시 */}
                 <div
                   className="inline-block px-8 py-3 rounded-[20px] mb-4 font-black text-4xl shadow-lg"
                   style={{
@@ -223,25 +188,20 @@ export default function ColorTest() {
                 >
                   {grade}
                 </div>
-
                 <h1 className="text-2xl font-bold text-[#191F28] mb-2">게임 종료!</h1>
-
-                {/* 점수 표시 */}
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-[20px] p-5 mb-4 border-2 border-blue-100">
                   <div className="text-sm text-[#6B7684] mb-1">최종 점수</div>
                   <div className="text-4xl font-black text-[#3182F6] mb-1">{score.toLocaleString()}점</div>
                   <div className="text-xs text-[#8B95A1]">레벨 {level} 달성</div>
                 </div>
-
                 <p className="text-sm font-medium mb-8" style={{ color: gradeColor }}>
                   {comment}
                 </p>
-
                 <div className="flex gap-3 mt-10 w-full max-w-[280px] mx-auto">
                   <button onClick={startGame} className="flex-1 h-[56px] rounded-[18px] bg-[#3182F6] text-white font-bold text-lg active:scale-95 transition-transform shadow-lg shadow-blue-500/20">
                     다시 도전
                   </button>
-                  <button onClick={() => navigate('/')} className="flex-1 h-[56px] rounded-[18px] bg-[#E5E8EB] text-[#6B7684] font-bold text-lg active:scale-95 transition-transform">
+                  <button onClick={() => navigate(-1)} className="flex-1 h-[56px] rounded-[18px] bg-[#E5E8EB] text-[#6B7684] font-bold text-lg active:scale-95 transition-transform">
                     홈으로
                   </button>
                 </div>
@@ -249,12 +209,11 @@ export default function ColorTest() {
             );
           })()
         ) : (
-          // Game Board
           <div className="w-full flex flex-col items-center">
             <div className="w-full flex justify-between items-center mb-6 px-2">
               <span className="text-[#4E5968] font-medium">남은 시간</span>
               <span className={`text-xl font-bold font-mono transition-colors ${showPenalty ? 'text-[#FF3B30] animate-shake scale-110' :
-                  timeLeft < 5 ? 'text-[#FF3B30] animate-pulse' : 'text-[#191F28]'
+                timeLeft < 5 ? 'text-[#FF3B30] animate-pulse' : 'text-[#191F28]'
                 }`}>
                 {timeLeft.toFixed(1)}s
               </span>

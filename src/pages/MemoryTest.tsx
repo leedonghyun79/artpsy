@@ -17,16 +17,15 @@ export default function MemoryTest() {
   const [showPenalty, setShowPenalty] = useState(false);
 
   useEffect(() => {
+    document.title = '기억력 테스트';
     const today = new Date().toDateString();
     const countKey = `memory_play_count_${today}`;
     setPlayCount(parseInt(localStorage.getItem(countKey) || '0'));
   }, []);
 
-  // Constants
-  const GRID_SIZE = 5; // 5x5 grid
-  const INITIAL_TIME = 30; // 초기 시간 (초)
+  const GRID_SIZE = 5;
+  const INITIAL_TIME = 30;
 
-  // 타이머 관리
   useEffect(() => {
     if (gameState === 'play' && timeLeft > 0) {
       const timer = setInterval(() => {
@@ -44,7 +43,6 @@ export default function MemoryTest() {
   }, [gameState, timeLeft]);
 
   const startGame = async () => {
-    // 3회 이상 플레이 시 전면 광고 로직
     const today = new Date().toDateString();
     const countKey = `memory_play_count_${today}`;
     const currentCount = parseInt(localStorage.getItem(countKey) || '0');
@@ -52,14 +50,12 @@ export default function MemoryTest() {
     if (currentCount >= 3) {
       try {
         await showInterstitial();
-        // 광고를 봤으므로 카운트 초기화
         localStorage.setItem(countKey, '0');
         setPlayCount(0);
       } catch (e) {
         console.error('Ad failed:', e);
       }
     } else {
-      // 3회 미만일 때만 카운트 증가
       const newCount = currentCount + 1;
       localStorage.setItem(countKey, newCount.toString());
       setPlayCount(newCount);
@@ -73,13 +69,11 @@ export default function MemoryTest() {
     setLevel(lvl);
     setGameState('memorize');
     setNextNumber(1);
-    // 레벨업 시 시간 보너스 (1초)
     if (lvl > 1) {
       setTimeLeft(prev => Math.min(INITIAL_TIME, prev + 1));
     }
 
-    // Generate unique random positions
-    const count = Math.min(lvl + 3, 25); // Start with 4 tiles, max 25
+    const count = Math.min(lvl + 3, 25);
     const positions = new Set<string>();
     const newTiles = [];
 
@@ -96,13 +90,10 @@ export default function MemoryTest() {
     setTiles(newTiles);
     setShowNumbers(true);
 
-    // time to memorize depends on quantity
-    // but classic chimpanzee test hides it quickly if you click start, 
-    // here we auto-hide after some time for simplicity
     setTimeout(() => {
       setShowNumbers(false);
       setGameState('play');
-    }, Math.max(1000, lvl * 300)); // Minimum 1s, increases slightly
+    }, Math.max(1000, lvl * 300));
   };
 
   const handleTileClick = (id: number) => {
@@ -110,17 +101,15 @@ export default function MemoryTest() {
 
     if (id === nextNumber) {
       if (id === tiles.length) {
-        // Level Complete - 마지막 숫자도 표시
-        setNextNumber(id + 1); // 마지막 숫자를 표시하기 위해 증가
+        setNextNumber(id + 1);
         setGameState('success');
         setTimeout(() => {
           generateLevel(level + 1);
-        }, 800); // 약간 짧게 조정
+        }, 800);
       } else {
         setNextNumber(id + 1);
       }
     } else {
-      // Wrong - Visual Penalty Effect
       setShowPenalty(true);
       setTimeout(() => setShowPenalty(false), 500);
 
@@ -139,36 +128,22 @@ export default function MemoryTest() {
 
   return (
     <div className="min-h-screen bg-[#F2F4F6] flex flex-col">
-      {/* Header */}
-      <header className="px-5 py-4 flex items-center justify-between bg-white sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => navigate('/')}
-            className="p-2 -ml-2 text-[#4E5968] active:scale-95 transition-transform"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🧠</span>
-            <span className="text-[18px] font-bold text-[#191F28] tracking-tight">기억력 테스트</span>
+      {/* Level & Timer Info (Top Area) */}
+      {(gameState === 'play' || gameState === 'memorize' || gameState === 'success') && (
+        <div className="fixed top-4 left-0 right-0 px-6 py-4 flex justify-between items-center z-20 pointer-events-none">
+          <div className="px-4 py-2 bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-[#E5E8EB] font-bold text-[#191F28]">
+            Lv. {level}
+          </div>
+          <div className={`px-4 py-2 bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-[#E5E8EB] font-bold font-mono transition-all ${showPenalty ? 'text-[#FF3B30] animate-shake scale-110' :
+            timeLeft < 10 ? 'text-[#FF3B30] animate-pulse' : 'text-[#3182F6]'
+            }`}>
+            ⏱️ {timeLeft.toFixed(1)}s
           </div>
         </div>
-        <div className="flex gap-4 items-center">
-          <div className="font-bold text-lg text-[#191F28]">Lv. {level}</div>
-          {(gameState === 'play' || gameState === 'memorize') && (
-            <div className={`font-bold text-lg font-mono transition-all ${showPenalty ? 'text-[#FF3B30] animate-shake scale-110' :
-                timeLeft < 10 ? 'text-[#FF3B30] animate-pulse' : 'text-[#3182F6]'
-              }`}>
-              ⏱️ {timeLeft.toFixed(1)}s
-            </div>
-          )}
-        </div>
-      </header>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 animate-enter">
+      <main className="flex-1 flex flex-col items-center justify-center p-6 animate-enter pt-10">
         {gameState === 'start' && (
           <div className="text-center w-full max-w-sm">
             <div className="text-7xl mb-6 animate-pop">🧠</div>
@@ -185,10 +160,7 @@ export default function MemoryTest() {
         )}
 
         {gameState === 'fail' && (() => {
-          // 점수 계산 (레벨 기반)
           const score = Math.max(0, (level - 1) * 100);
-
-          // 등급 계산
           let grade = '';
           let gradeColor = '';
           let gradeEmoji = '';
@@ -234,8 +206,6 @@ export default function MemoryTest() {
           return (
             <div className="text-center w-full max-w-sm animate-pop">
               <div className="text-7xl mb-6">{gradeEmoji}</div>
-
-              {/* 등급 표시 */}
               <div
                 className="inline-block px-8 py-3 rounded-[20px] mb-4 font-black text-4xl shadow-lg"
                 style={{
@@ -246,25 +216,20 @@ export default function MemoryTest() {
               >
                 {grade}
               </div>
-
               <h1 className="text-2xl font-bold text-[#191F28] mb-2">게임 종료!</h1>
-
-              {/* 점수 표시 */}
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-[20px] p-5 mb-4 border-2 border-blue-100">
                 <div className="text-sm text-[#6B7684] mb-1">최종 점수</div>
                 <div className="text-4xl font-black text-[#3182F6] mb-1">{score.toLocaleString()}</div>
                 <div className="text-xs text-[#8B95A1]">레벨 {level} 달성</div>
               </div>
-
               <p className="text-sm font-medium mb-8" style={{ color: gradeColor }}>
                 {comment}
               </p>
-
               <div className="flex gap-3 mt-10 w-full max-w-[280px] mx-auto">
                 <button onClick={retry} className="flex-1 h-[56px] rounded-[18px] bg-[#3182F6] text-white font-bold text-lg active:scale-95 transition-transform shadow-lg shadow-blue-500/20">
                   다시 도전
                 </button>
-                <button onClick={() => navigate('/')} className="flex-1 h-[56px] rounded-[18px] bg-[#E5E8EB] text-[#6B7684] font-bold text-lg active:scale-95 transition-transform">
+                <button onClick={() => navigate(-1)} className="flex-1 h-[56px] rounded-[18px] bg-[#E5E8EB] text-[#6B7684] font-bold text-lg active:scale-95 transition-transform">
                   홈으로
                 </button>
               </div>

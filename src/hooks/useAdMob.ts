@@ -4,8 +4,8 @@ import { GoogleAdMob } from '@apps-in-toss/web-framework';
 // 테스트용 광고 ID (quit_wallet 예제 참조)
 // 실제 배포 시에는 발급받은 실제 광고 ID로 교체해야 합니다.
 const AD_GROUP_IDS = {
-  REWARDED: 'ait.v2.live.6002720767dd45d2',      // 보상형 광고 테스트 ID
-  INTERSTITIAL: 'ait.v2.live.5ba4509afe664047',  // 전면형 광고 테스트 ID
+  REWARDED: 'ait.v2.rewarded',      // 보상형 광고 ID (테스트ID)
+  INTERSTITIAL: 'ait.v2.interstitial',  // 전면 광고 ID (테스트ID)
 } as const;
 
 export function useAdMob() {

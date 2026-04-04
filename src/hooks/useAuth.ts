@@ -4,14 +4,13 @@ import type {
   LoginRequest,
   RefreshTokenRequest,
   TokenResponse,
-  UserInfoResponse,
   AuthState,
 } from '../types/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.PROD
     ? 'https://preeminent-medovik-6eecc5.netlify.app'
-    : `http://${window.location.hostname}:3005` // Server port is 3005 as per .env
+    : `http://${window.location.hostname}:3005`
 );
 
 export const useAuth = (): AuthState => {
@@ -39,24 +38,18 @@ export const useAuth = (): AuthState => {
 
   const login = async () => {
     try {
-      console.log('useAuth: Login started (setting loading true)');
+      console.log('useAuth: login flow started');
       setLoading(true);
       setError(null);
 
-      console.log('useAuth: Calling appLogin() from web-framework...');
       const loginResult = await appLogin();
 
-      console.log('useAuth: appLogin result received:', loginResult);
-
       if (!loginResult || !loginResult.authorizationCode) {
-        throw new Error('토스 로그인 정보를 가져올 수 없습니다. (인가 코드가 없거나 결과가 누락되었습니다)');
+        throw new Error('토스 로그인 정보를 가져올 수 없습니다.');
       }
 
       const { authorizationCode, referrer } = loginResult;
-      console.log('useAuth: authorizationCode:', authorizationCode, 'referrer:', referrer);
 
-      // 2. 백엔드 서버에 토큰 발급 요청
-      console.log('useAuth: Fetching access token from:', `${API_BASE_URL}/api/auth/get-access-token`);
       const response = await fetch(`${API_BASE_URL}/api/auth/get-access-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,11 +57,11 @@ export const useAuth = (): AuthState => {
       });
 
       const result: TokenResponse = await response.json();
-      console.log('useAuth: Backend token response:', result);
 
       if (result.data?.success) {
         saveTokens(result.data.success.accessToken, result.data.success.refreshToken);
         await getUserInfoInternal(result.data.success.accessToken);
+        console.log('useAuth: login flow completed');
       } else {
         setError(result.data?.error || '로그인 실패');
       }
@@ -82,7 +75,6 @@ export const useAuth = (): AuthState => {
 
   const getUserInfoInternal = async (token: string) => {
     try {
-      console.log('useAuth: Fetching user info from:', `${API_BASE_URL}/api/auth/get-user-info`);
       const response = await fetch(`${API_BASE_URL}/api/auth/get-user-info`, {
         method: 'GET',
         headers: {
@@ -91,15 +83,11 @@ export const useAuth = (): AuthState => {
         },
       });
 
-      const result: UserInfoResponse = await response.json();
-      console.log('useAuth: Full User Info API Result:', result);
+      const result = await response.json();
 
       if (result.data?.success) {
-        console.log('useAuth: Setting userInfo with:', result.data.success);
         setUserInfo(result.data.success);
         localStorage.setItem('user_info', JSON.stringify(result.data.success));
-      } else {
-        console.warn('useAuth: User info success data is missing!', result.data);
       }
     } catch (e) {
       console.error('GetUserInfo Error:', e);
@@ -115,7 +103,6 @@ export const useAuth = (): AuthState => {
 
   const refreshAccessToken = async () => {
     if (!refreshToken) return;
-
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
@@ -123,9 +110,7 @@ export const useAuth = (): AuthState => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken } as RefreshTokenRequest),
       });
-
       const result: TokenResponse = await response.json();
-
       if (result.data?.success) {
         saveTokens(result.data.success.accessToken, result.data.success.refreshToken);
       } else {
@@ -144,7 +129,6 @@ export const useAuth = (): AuthState => {
       clearAuth();
       return;
     }
-
     try {
       setLoading(true);
       await fetch(`${API_BASE_URL}/api/auth/logout-by-access-token`, {

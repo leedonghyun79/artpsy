@@ -12,8 +12,8 @@ export default function TimingTest() {
   const [scale, setScale] = useState(1);
   const [playCount, setPlayCount] = useState(0);
 
-
   useEffect(() => {
+    document.title = '시간 테스트';
     const today = new Date().toDateString();
     const countKey = `timing_play_count_${today}`;
     setPlayCount(parseInt(localStorage.getItem(countKey) || '0'));
@@ -21,8 +21,6 @@ export default function TimingTest() {
 
   const onStartClick = async () => {
     if (state !== 'idle') return;
-
-    // 3회 이상 플레이 시 전면 광고 로직
     const today = new Date().toDateString();
     const countKey = `timing_play_count_${today}`;
     const currentCount = parseInt(localStorage.getItem(countKey) || '0');
@@ -40,20 +38,15 @@ export default function TimingTest() {
       localStorage.setItem(countKey, newCount.toString());
       setPlayCount(newCount);
     }
-
     setState('ready');
   };
 
   const startHolding = () => {
     if (state !== 'ready') return;
-
     setState('holding');
     startTimeRef.current = performance.now();
-
-    // Breathing animation
     const animate = () => {
       const elapsed = performance.now() - startTimeRef.current;
-      // Heartbeat effect based on time
       setScale(1 + Math.sin(elapsed / 200) * 0.05);
       animationFrameRef.current = requestAnimationFrame(animate);
     };
@@ -62,11 +55,9 @@ export default function TimingTest() {
 
   const stopHolding = () => {
     if (state !== 'holding') return;
-
     cancelAnimationFrame(animationFrameRef.current);
     const endTime = performance.now();
     const duration = (endTime - startTimeRef.current) / 1000;
-
     setResult(duration);
     setState('result');
     setScale(1);
@@ -86,7 +77,6 @@ export default function TimingTest() {
     return { rank: "🐢 느긋한 성격", msg: "조금 더 집중해보세요!" };
   };
 
-  // Prevent context menu on long press
   const handleContextMenu = (e: React.MouseEvent) => e.preventDefault();
 
   return (
@@ -94,26 +84,8 @@ export default function TimingTest() {
       className="min-h-screen bg-[#F2F4F6] flex flex-col select-none"
       onContextMenu={handleContextMenu}
     >
-      {/* Header */}
-      <header className="px-5 py-4 flex items-center justify-between bg-white sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => navigate('/')}
-            className="p-2 -ml-2 text-[#4E5968] active:scale-95 transition-transform"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⏰</span>
-            <span className="text-[18px] font-bold text-[#191F28] tracking-tight">시간 테스트</span>
-          </div>
-        </div>
-      </header>
-
       {/* Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-enter">
+      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-enter pt-10">
         {state === 'idle' && (
           <div className="animate-pop">
             <div className="text-6xl mb-6">⏱️</div>
@@ -149,8 +121,8 @@ export default function TimingTest() {
               onMouseLeave={stopHolding}
               onTouchEnd={(e) => { e.preventDefault(); stopHolding(); }}
               className={`w-48 h-48 rounded-full text-white text-xl font-bold shadow-lg transition-all active:scale-95 touch-manipulation flex items-center justify-center ${state === 'ready'
-                  ? 'bg-[#3182F6] shadow-blue-500/30 animate-pulse'
-                  : 'bg-[#FF3B30] shadow-red-500/30'
+                ? 'bg-[#3182F6] shadow-blue-500/30 animate-pulse'
+                : 'bg-[#FF3B30] shadow-red-500/30'
                 }`}
               style={{ transform: state === 'holding' ? `scale(${scale})` : undefined }}
             >
@@ -187,7 +159,7 @@ export default function TimingTest() {
               <button onClick={reset} className="flex-1 h-[56px] rounded-[18px] bg-[#3182F6] text-white font-bold text-lg active:scale-95 transition-transform shadow-lg shadow-blue-500/20">
                 다시 도전
               </button>
-              <button onClick={() => navigate('/')} className="flex-1 h-[56px] rounded-[18px] bg-[#E5E8EB] text-[#6B7684] font-bold text-lg active:scale-95 transition-transform">
+              <button onClick={() => navigate(-1)} className="flex-1 h-[56px] rounded-[18px] bg-[#E5E8EB] text-[#6B7684] font-bold text-lg active:scale-95 transition-transform">
                 홈으로
               </button>
             </div>

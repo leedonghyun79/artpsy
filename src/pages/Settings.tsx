@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuthContext } from '../context/AuthContext';
@@ -5,83 +6,84 @@ import { useAuthContext } from '../context/AuthContext';
 export default function Settings() {
   const navigate = useNavigate();
   const { resetApp } = useApp();
-  const { userInfo, logout } = useAuthContext();
+  const { logout, loading: authLoading } = useAuthContext();
 
-  const handleReset = async () => {
-    if (confirm('정말로 로그아웃하고 앱을 초기화하시겠습니까?')) {
-      await logout();
-      resetApp();
-      window.location.reload();
+  useEffect(() => {
+    // 네이티브 헤더 타이틀 설정
+    document.title = '설정';
+  }, []);
+
+  const handleLogout = async () => {
+    if (authLoading) return;
+
+    if (window.confirm('로그아웃 하시겠습니까?')) {
+      try {
+        // 1. 서버 로그아웃 호출
+        await logout();
+
+        // 2. 앱 전역 상태 및 LocalStorage 초기화
+        resetApp();
+
+        // 3. 온보딩 화면으로 이동
+        window.location.href = '/';
+      } catch (e) {
+        console.error('Logout failed:', e);
+        // 에러가 나더라도 강제 초기화
+        resetApp();
+        window.location.href = '/';
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F4F6]">
-      {/* Header */}
-      <header className="bg-white px-5 py-4 flex items-center sticky top-0 z-10">
+    <div className="min-h-screen bg-white">
+      {/* 설정 목록 */}
+      <div className="pt-4">
         <button
-          onClick={() => navigate('/')}
-          className="-ml-2 p-2 text-[#333D4B]"
+          onClick={() => navigate(-1)}
+          className="px-6 py-4 text-[#8B95A1] flex items-center gap-1 active:opacity-60 transition-opacity"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          뒤로가기
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className="w-full px-6 py-5 flex items-center justify-between active:bg-gray-50 transition-colors"
+        >
+          <span className="text-[17px] font-medium text-[#333D4B]">로그아웃</span>
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M9 5L16 12L9 19"
+              stroke="#B0B8C1"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
-        <h1 className="text-xl font-bold ml-1 text-[#191F28]">설정</h1>
-      </header>
 
-      <main className="p-5 space-y-6">
-        {/* Section 1: App Info */}
-        <section>
-          <h2 className="text-sm font-semibold text-[#8B95A1] mb-2 px-1">앱 정보</h2>
-          <div className="bg-white rounded-[20px] overflow-hidden">
-            <div className="flex justify-between items-center p-5 border-b border-[#F2F4F6]">
-              <span className="text-[#333D4B]">버전</span>
-              <span className="text-[#8B95A1]">1.0.0</span>
-            </div>
-            <div className="flex justify-between items-center p-5">
-              <span className="text-[#333D4B]">빌드</span>
-              <span className="text-[#8B95A1]">Production</span>
-            </div>
-          </div>
-        </section>
+        {/* 구분선 */}
+        <div className="mx-6 h-[1px] bg-[#F2F4F6]" />
 
-        {/* Section 2: Account */}
-        <section>
-          <h2 className="text-sm font-semibold text-[#8B95A1] mb-2 px-1">계정</h2>
-          <div className="bg-white rounded-[20px] overflow-hidden">
-            <div className="p-5 border-b border-[#F2F4F6]">
-              <span className="text-[#333D4B] block mb-1">내 정보</span>
-              <pre className="text-xs text-[#8B95A1] bg-[#F9FAFB] p-3 rounded-lg overflow-x-auto">
-                {userInfo ? JSON.stringify(userInfo, null, 2) : '로그인 정보 없음'}
-              </pre>
-            </div>
-            <button onClick={() => alert('준비 중')} className="w-full flex justify-between items-center p-5 border-b border-[#F2F4F6] active:bg-[#F9FAFB]">
-              <span className="text-[#333D4B]">프로필 수정</span>
-              <svg className="w-5 h-5 text-[#D1D6DB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </button>
-          </div>
-        </section>
-
-        {/* Section 3: Danger Zone */}
-        <section>
-          <div className="bg-white rounded-[20px] overflow-hidden">
-            <button
-              onClick={handleReset}
-              className="w-full p-5 text-left text-[#FF3B30] font-medium active:bg-[#F9FAFB] flex items-center justify-center"
-            >
-              앱 초기화
-            </button>
-          </div>
-          <p className="text-xs text-[#8B95A1] text-center mt-3">
-            초기화 시 모든 데이터가 삭제됩니다.
+        <div className="px-6 py-8">
+          <p className="text-[13px] text-[#8B95A1] leading-relaxed">
+            서비스 이용 중 불편한 점이 있으시면<br />
+            pixelconnect79@gmail.com으로 문의해 주세요.
           </p>
-        </section>
-
-        <div className="text-center py-8">
-          <span className="text-xs text-[#B0B8C1]">Designed by Toss Style</span>
+          <p className="mt-4 text-[12px] text-[#B0B8C1]">
+            버전 1.1.4
+          </p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
