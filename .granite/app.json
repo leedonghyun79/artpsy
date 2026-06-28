@@ -1,1 +1,4 @@
-{"appName":"artpsy","permissions":[],"_metadata":{"runtimeVersion":"0.72.6","bundleFiles":["bundle.ios.0_72_6.js","bundle.ios.0_72_6.js.map","bundle.android.0_72_6.js","bundle.android.0_72_6.js.map"],"deploymentId":"019c4b12-6d63-748a-8459-445a93c72460","packageJson":{"dependencies":{"@apps-in-toss/web-framework":"1.8.1","@emotion/react":"11.14.0","@toss/tds-colors":"0.1.0","@toss/tds-mobile":"2.2.1","@toss/tds-mobile-ait":"2.2.1","@types/react-color":"3.0.13","lucide-react":"0.562.0","react":"18.3.1","react-color":"2.19.3","react-dom":"18.3.1","react-router-dom":"7.13.0","vconsole":"3.15.1"},"devDependencies":{"@eslint/js":"9.39.2","@types/react":"18.3.27","@types/react-dom":"18.3.7","@vitejs/plugin-react":"4.7.0","autoprefixer":"10.4.23","eslint":"9.39.2","eslint-plugin-react-hooks":"5.2.0","eslint-plugin-react-refresh":"0.4.26","globals":"15.15.0","postcss":"8.5.6","tailwindcss":"3.4.19","typescript":"5.6.3","typescript-eslint":"8.53.1","vite":"5.4.21"}}}}
+{
+  "appName": "artpsy",
+  "permissions": []
+}

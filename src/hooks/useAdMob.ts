@@ -4,8 +4,8 @@ import { GoogleAdMob } from '@apps-in-toss/web-framework';
 // 테스트용 광고 ID (quit_wallet 예제 참조)
 // 실제 배포 시에는 발급받은 실제 광고 ID로 교체해야 합니다.
 const AD_GROUP_IDS = {
-  REWARDED: 'ait.v2.rewarded',      // 보상형 광고 ID (테스트ID)
-  INTERSTITIAL: 'ait.v2.interstitial',  // 전면 광고 ID (테스트ID)
+  REWARDED: 'ait-ad-test-rewarded-id',      // 보상형 광고 ID (테스트ID)
+  INTERSTITIAL: 'ait.v2.live.7f1a5ec59c1b4f96',  // 전면 광고 ID (실운영ID)
 } as const;
 
 export function useAdMob() {
@@ -54,8 +54,6 @@ export function useAdMob() {
         } else {
           setStatus('AdMob을 지원하지 않는 환경입니다.');
           setIsLoading(false);
-          // 개발 환경 등에서는 바로 성공 처리하거나 에러 처리
-          console.warn('AdMob not supported');
           resolve();
         }
       } catch (err) {
