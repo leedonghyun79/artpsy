@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdMob } from '../hooks/useAdMob';
+import { useAdMob } from '../../src/hooks/useAdMob';
 
 type TestState = 'idle' | 'waiting' | 'ready' | 'too-soon' | 'finished';
 

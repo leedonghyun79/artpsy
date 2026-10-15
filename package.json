@@ -4,18 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "granite dev",
-    "build": "ait build",
+    "dev": "vite --host",
+    "build": "tsc -b && vite build && ait build",
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "ait deploy"
   },
   "dependencies": {
-    "@apps-in-toss/web-framework": "2.0.5",
+    "@apps-in-toss/web-framework": "^3.8.0",
     "@emotion/react": "^11.14.0",
     "@toss/tds-colors": "^0.1.0",
-    "@toss/tds-mobile": "^2.2.0",
-    "@toss/tds-mobile-ait": "^2.2.0",
+    "@toss/tds-mobile": "2.4.1",
+    "@toss/tds-mobile-ait": "2.4.1",
     "@types/react-color": "^3.0.13",
     "lucide-react": "^0.562.0",
     "react": "^18.3.1",
@@ -25,6 +25,7 @@
     "vconsole": "^3.15.1"
   },
   "devDependencies": {
+    "@apps-in-toss/devtools": "^3.8.0",
     "@eslint/js": "^9.13.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

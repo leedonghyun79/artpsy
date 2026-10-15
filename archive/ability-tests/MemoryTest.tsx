@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdMob } from '../hooks/useAdMob';
+import { useAdMob } from '../../src/hooks/useAdMob';
 
 type GameState = 'start' | 'memorize' | 'play' | 'success' | 'fail';
 

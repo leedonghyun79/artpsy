@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdMob } from '../hooks/useAdMob';
+import { useAdMob } from '../../src/hooks/useAdMob';
 
 export default function TimingTest() {
   const navigate = useNavigate();

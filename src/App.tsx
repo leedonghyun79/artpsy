@@ -6,10 +6,6 @@ import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
 import DrawingTest from './pages/DrawingTest';
-import ReactionTest from './pages/ReactionTest';
-import MemoryTest from './pages/MemoryTest';
-import ColorTest from './pages/ColorTest';
-import TimingTest from './pages/TimingTest';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 
@@ -35,10 +31,6 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/test" element={<DrawingTest />} />
-      <Route path="/reaction" element={<ReactionTest />} />
-      <Route path="/memory" element={<MemoryTest />} />
-      <Route path="/color" element={<ColorTest />} />
-      <Route path="/timing" element={<TimingTest />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/" element={<Home />} />
     </Routes>

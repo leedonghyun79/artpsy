@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-type Topic = 'person' | 'house' | 'tree' | 'fish';
+type Topic = 'person' | 'house' | 'tree' | 'fish' | 'flower' | 'wind' | 'road';
 type Stage = 'topic' | 'drawing' | 'preview' | 'ad' | 'result';
 
 import { analyzeDrawing, PsychologyResult } from '../services/aiService';
@@ -13,6 +13,15 @@ const LOADING_MESSAGES = [
   "숨겨진 심리를 파악하는 중이에요...",
   "결과 리포트를 작성하고 있어요..."
 ];
+
+const topicBackground = {
+  background: '#F2F4F6',
+} as const;
+
+
+// 노이즈 텍스처 (SVG feTurbulence)
+const NOISE_IMAGE = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")`;
+
 
 
 
@@ -357,11 +366,14 @@ ${result.advice}
     }
   };
 
-  const topicData = [
-    { id: 'person' as Topic, title: '사람', emoji: '👤', desc: '자아상과 타인에 대한 시선을 파악해요', labels: { rel: '대인관계', work: '사회적 에너지' } },
-    { id: 'house' as Topic, title: '집', emoji: '🏠', desc: '가족 관계와 내면의 안정감을 분석해요', labels: { rel: '가족 내 상호작용', work: '내적 적응' } },
-    { id: 'tree' as Topic, title: '나무', emoji: '🌳', desc: '무의식적 자아와 내면의 에너지를 알아봐요', labels: { rel: '정서적 상호관계', work: '추동력 및 의지' } },
-    { id: 'fish' as Topic, title: '물고기', emoji: '🐟', desc: '무의식 속 감정과 현재의 스트레스를 읽어요', labels: { rel: '감정적 교류', work: '상황 적응' } }
+  const topicData: { id: Topic; title: string; emoji: string; tint: string; desc: string; isNew?: boolean; labels: { rel: string; work: string } }[] = [
+    { id: 'person' as Topic, title: '사람', emoji: '👤', tint: '#F1E8FF', desc: '자아상과 타인에 대한 시선을 파악해요', labels: { rel: '대인관계', work: '사회적 에너지' } },
+    { id: 'house' as Topic, title: '집', emoji: '🏠', tint: '#FFEBDD', desc: '가족 관계와 내면의 안정감을 분석해요', labels: { rel: '가족 내 상호작용', work: '내적 적응' } },
+    { id: 'tree' as Topic, title: '나무', emoji: '🌳', tint: '#E6F6E9', desc: '무의식적 자아와 내면의 에너지를 알아봐요', labels: { rel: '정서적 상호관계', work: '추동력 및 의지' } },
+    { id: 'fish' as Topic, title: '물고기', emoji: '🐟', tint: '#E3F0FF', desc: '무의식 속 감정과 현재의 스트레스를 읽어요', labels: { rel: '감정적 교류', work: '상황 적응' } },
+    { id: 'flower' as Topic, title: '꽃', emoji: '🌸', tint: '#FFE8F0', isNew: true, desc: '나를 드러내는 방식과 마음의 온기를 살펴봐요', labels: { rel: '타인에게 보이는 모습', work: '정서적 온기' } },
+    { id: 'wind' as Topic, title: '바람', emoji: '🌬️', tint: '#E8F6F5', isNew: true, desc: '바깥에서 오는 압박감과 대응 방식을 살펴봐요', labels: { rel: '대인 관계 압박', work: '환경 적응 방식' } },
+    { id: 'road' as Topic, title: '길', emoji: '🛤️', tint: '#EEF2FF', isNew: true, desc: '삶의 방향과 앞으로 나아가는 태도를 살펴봐요', labels: { rel: '주변과 함께 가는 방식', work: '방향 감각' } }
   ];
 
   useEffect(() => {
@@ -369,36 +381,73 @@ ${result.advice}
   }, [stage]);
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2] pb-10">
-      <main className="px-5 pt-10 animate-enter">
+    <div
+      className={`min-h-screen pb-10 relative ${stage === 'topic' ? '' : 'bg-white'}`}
+      style={stage === 'topic' ? topicBackground : undefined}
+    >
+      {stage === 'topic' && (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.12] mix-blend-multiply"
+          style={{ backgroundImage: NOISE_IMAGE }}
+        />
+      )}
+      <main className="relative px-6 pt-12 animate-enter">
         {/* Topic Selection */}
         {stage === 'topic' && (
           <>
-            <h2 className="t-h1 text-[#191F28] mb-8">
-              어떤 그림을<br />그려볼까요?
-            </h2>
-            <div className="space-y-4">
+            <header className="flex items-center gap-3 mb-8">
+              <img
+                src="https://static.toss.im/appsintoss/13599/d755fb6b-f63b-4408-9605-5f94e3c6f74b.png"
+                alt="Artpsy Logo"
+                className="w-12 h-12 shrink-0 object-contain rounded-[4px]"
+              />
+              <div>
+                <h1 className="text-[20px] font-bold text-[#191F28] leading-tight">그림 심리 테스트</h1>
+                <p className="text-[14px] text-[#6B7684] font-medium mt-0.5">마음 가는 주제를 골라 그려보세요</p>
+              </div>
+            </header>
+            <ul className="grid grid-cols-2 gap-3">
               {topicData.map((topic) => (
-                <button
-                  key={topic.id}
-                  onClick={() => handleTopicSelect(topic.id)}
-                  className="surface w-full p-6 flex items-center justify-between text-left touch-effect"
-                >
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 rounded-[20px] bg-[#F9FAFB] flex items-center justify-center text-3xl">
-                      {topic.emoji}
-                    </div>
-                    <div>
-                      <div className="text-[18px] font-bold text-[#191F28] mb-1">{topic.title} 그리기</div>
-                      <div className="text-[14px] text-[#8B95A1] font-medium">{topic.desc}</div>
-                    </div>
-                  </div>
-                  <svg className="w-5 h-5 text-[#D1D6DB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+                <li key={topic.id}>
+                  <button
+                    onClick={() => handleTopicSelect(topic.id)}
+                    className="relative overflow-hidden w-full h-full min-h-[208px] p-5 flex flex-col items-start text-left rounded-[8px] bg-white border border-[#EEF0F3] active:scale-[0.98] transition-transform"
+                  >
+                    {topic.isNew && (
+                      <span className="absolute top-3 right-3 px-1.5 py-0.5 rounded-[6px] bg-[#FF4D6A] text-white text-[11px] font-bold leading-none">
+                        NEW
+                      </span>
+                    )}
+                    <div className="text-[20px] font-bold text-[#191F28] mb-2">{topic.title}</div>
+                    <div className="text-[15px] text-[#6B7684] font-medium leading-snug pr-4">{topic.desc}</div>
+                    <span className="absolute bottom-4 right-3 text-[40px] leading-none">{topic.emoji}</span>
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
+            <a
+              href="https://tossminiapp.com/d/delulu-vacance/launch?referrer=appsintoss.common_module_share"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 flex items-center justify-between p-4 rounded-[8px] bg-white border border-[#EEF0F3] active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <img
+                  src="https://static.toss.im/appsintoss/13599/c15b288c-8097-4faf-8427-13f2230bf1a0.png"
+                  alt="뇌피셜 퀴즈 로고"
+                  className="w-12 h-12 shrink-0 rounded-[12px] object-cover"
+                />
+                <div className="min-w-0">
+                  <p className="text-[16px] font-bold text-[#191F28]">뇌피셜 퀴즈</p>
+                  <p className="text-[13px] text-[#6B7684] mt-0.5">다들 맞다고 믿는 그 말, 사실일까?</p>
+                </div>
+              </div>
+              <span className="text-[20px] font-bold text-[#B0B8C1] shrink-0">›</span>
+            </a>
+            <p className="mt-6 text-center text-[13px] leading-relaxed text-[#8B95A1]">
+              AI가 그림을 보고 재미로 풀어보는 심리 테스트예요.<br />
+              과학적 진단이 아니니 가볍게 즐겨주세요.
+            </p>
           </>
         )}
 

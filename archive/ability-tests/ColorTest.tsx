@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdMob } from '../hooks/useAdMob';
+import { useAdMob } from '../../src/hooks/useAdMob';
 
 export default function ColorTest() {
   const navigate = useNavigate();
